@@ -117,12 +117,52 @@ exports.Prisma.TransactionIsolationLevel = makeStrictEnum({
   Serializable: "Serializable",
 });
 
-exports.Prisma.PostScalarFieldEnum = {
+exports.Prisma.ParentPatternScalarFieldEnum = {
   id: "id",
-  name: "name",
+  title: "title",
+  notes: "notes",
   createdAt: "createdAt",
   updatedAt: "updatedAt",
   createdById: "createdById",
+};
+
+exports.Prisma.PatternScalarFieldEnum = {
+  id: "id",
+  title: "title",
+  notes: "notes",
+  createdAt: "createdAt",
+  updatedAt: "updatedAt",
+  parentId: "parentId",
+};
+
+exports.Prisma.CourseScalarFieldEnum = {
+  id: "id",
+  instructions: "instructions",
+  notes: "notes",
+  createdAt: "createdAt",
+  updatedAt: "updatedAt",
+  patternId: "patternId",
+};
+
+exports.Prisma.ProjectScalarFieldEnum = {
+  id: "id",
+  title: "title",
+  notes: "notes",
+  status: "status",
+  createdAt: "createdAt",
+  updatedAt: "updatedAt",
+  patternId: "patternId",
+  createdById: "createdById",
+};
+
+exports.Prisma.ProgressScalarFieldEnum = {
+  id: "id",
+  course: "course",
+  started: "started",
+  finished: "finished",
+  createdAt: "createdAt",
+  updatedAt: "updatedAt",
+  projectId: "projectId",
 };
 
 exports.Prisma.AccountScalarFieldEnum = {
@@ -176,9 +216,18 @@ exports.Prisma.NullsOrder = {
   first: "first",
   last: "last",
 };
+exports.Status = exports.$Enums.Status = {
+  TODO: "TODO",
+  In_PROGESS: "In_PROGESS",
+  DONE: "DONE",
+};
 
 exports.Prisma.ModelName = {
-  Post: "Post",
+  ParentPattern: "ParentPattern",
+  Pattern: "Pattern",
+  Course: "Course",
+  Project: "Project",
+  Progress: "Progress",
   Account: "Account",
   Session: "Session",
   User: "User",

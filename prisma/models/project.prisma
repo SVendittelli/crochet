@@ -1,0 +1,35 @@
+model Project {
+  id       String    @id @default(cuid(2))
+  title    String
+  notes    String
+  status   Status    @default(TODO)
+  progress Progress?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  pattern   Pattern @relation(fields: [patternId], references: [id])
+  patternId String  @unique
+
+  createdBy   User   @relation(fields: [createdById], references: [id])
+  createdById String
+}
+
+enum Status {
+  TODO
+  In_PROGESS
+  DONE
+}
+
+model Progress {
+  id       String  @id @default(cuid(2))
+  course   Int
+  started  Boolean @default(false)
+  finished Boolean @default(false)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  project   Project @relation(fields: [projectId], references: [id])
+  projectId String  @unique
+}

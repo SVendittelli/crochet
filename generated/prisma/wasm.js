@@ -87,12 +87,52 @@ exports.Prisma.TransactionIsolationLevel = makeStrictEnum({
   Serializable: "Serializable",
 });
 
-exports.Prisma.PostScalarFieldEnum = {
+exports.Prisma.ParentPatternScalarFieldEnum = {
   id: "id",
-  name: "name",
+  title: "title",
+  notes: "notes",
   createdAt: "createdAt",
   updatedAt: "updatedAt",
   createdById: "createdById",
+};
+
+exports.Prisma.PatternScalarFieldEnum = {
+  id: "id",
+  title: "title",
+  notes: "notes",
+  createdAt: "createdAt",
+  updatedAt: "updatedAt",
+  parentId: "parentId",
+};
+
+exports.Prisma.CourseScalarFieldEnum = {
+  id: "id",
+  instructions: "instructions",
+  notes: "notes",
+  createdAt: "createdAt",
+  updatedAt: "updatedAt",
+  patternId: "patternId",
+};
+
+exports.Prisma.ProjectScalarFieldEnum = {
+  id: "id",
+  title: "title",
+  notes: "notes",
+  status: "status",
+  createdAt: "createdAt",
+  updatedAt: "updatedAt",
+  patternId: "patternId",
+  createdById: "createdById",
+};
+
+exports.Prisma.ProgressScalarFieldEnum = {
+  id: "id",
+  course: "course",
+  started: "started",
+  finished: "finished",
+  createdAt: "createdAt",
+  updatedAt: "updatedAt",
+  projectId: "projectId",
 };
 
 exports.Prisma.AccountScalarFieldEnum = {
@@ -146,9 +186,18 @@ exports.Prisma.NullsOrder = {
   first: "first",
   last: "last",
 };
+exports.Status = exports.$Enums.Status = {
+  TODO: "TODO",
+  In_PROGESS: "In_PROGESS",
+  DONE: "DONE",
+};
 
 exports.Prisma.ModelName = {
-  Post: "Post",
+  ParentPattern: "ParentPattern",
+  Pattern: "Pattern",
+  Course: "Course",
+  Project: "Project",
+  Progress: "Progress",
   Account: "Account",
   Session: "Session",
   User: "User",
@@ -191,7 +240,6 @@ const config = {
   engineVersion: "2ba551f319ab1df4bc874a89965d8b3641056773",
   datasourceNames: ["db"],
   activeProvider: "postgresql",
-  postinstall: true,
   inlineDatasources: {
     db: {
       url: {
@@ -201,15 +249,15 @@ const config = {
     },
   },
   inlineSchema:
-    '// This is your Prisma schema file,\n// learn more about it in the docs: https://pris.ly/d/prisma-schema\n\ngenerator client {\n  provider = "prisma-client-js"\n  output   = "../generated/prisma"\n}\n\ndatasource db {\n  provider = "postgresql"\n  // NOTE: When using mysql or sqlserver, uncomment the @db.Text annotations in model Account below\n  // Further reading:\n  // https://next-auth.js.org/adapters/prisma#create-the-prisma-schema\n  // https://www.prisma.io/docs/reference/api-reference/prisma-schema-reference#string\n  url      = env("DATABASE_URL")\n}\n\nmodel Post {\n  id        Int      @id @default(autoincrement())\n  name      String\n  createdAt DateTime @default(now())\n  updatedAt DateTime @updatedAt\n\n  createdBy   User   @relation(fields: [createdById], references: [id])\n  createdById String\n\n  @@index([name])\n}\n\n// Necessary for Next auth\nmodel Account {\n  id                       String  @id @default(cuid())\n  userId                   String\n  type                     String\n  provider                 String\n  providerAccountId        String\n  refresh_token            String? // @db.Text\n  access_token             String? // @db.Text\n  expires_at               Int?\n  token_type               String?\n  scope                    String?\n  id_token                 String? // @db.Text\n  session_state            String?\n  user                     User    @relation(fields: [userId], references: [id], onDelete: Cascade)\n  refresh_token_expires_in Int?\n\n  @@unique([provider, providerAccountId])\n}\n\nmodel Session {\n  id           String   @id @default(cuid())\n  sessionToken String   @unique\n  userId       String\n  expires      DateTime\n  user         User     @relation(fields: [userId], references: [id], onDelete: Cascade)\n}\n\nmodel User {\n  id            String    @id @default(cuid())\n  name          String?\n  email         String?   @unique\n  emailVerified DateTime?\n  image         String?\n  accounts      Account[]\n  sessions      Session[]\n  posts         Post[]\n}\n\nmodel VerificationToken {\n  identifier String\n  token      String   @unique\n  expires    DateTime\n\n  @@unique([identifier, token])\n}\n',
+    'model ParentPattern {\n  id       String    @id @default(cuid(2))\n  title    String\n  notes    String\n  children Pattern[]\n\n  createdAt DateTime @default(now())\n  updatedAt DateTime @updatedAt\n\n  createdBy   User   @relation(fields: [createdById], references: [id])\n  createdById String\n}\n\nmodel Pattern {\n  id      String   @id @default(cuid(2))\n  title   String\n  notes   String\n  courses Course[]\n  project Project?\n\n  createdAt DateTime @default(now())\n  updatedAt DateTime @updatedAt\n\n  parent   ParentPattern @relation(fields: [parentId], references: [id])\n  parentId String\n}\n\nmodel Course {\n  id           String   @id @default(cuid(2))\n  instructions String[]\n  notes        String\n\n  createdAt DateTime @default(now())\n  updatedAt DateTime @updatedAt\n\n  pattern   Pattern @relation(fields: [patternId], references: [id])\n  patternId String\n}\n\nmodel Project {\n  id       String    @id @default(cuid(2))\n  title    String\n  notes    String\n  status   Status    @default(TODO)\n  progress Progress?\n\n  createdAt DateTime @default(now())\n  updatedAt DateTime @updatedAt\n\n  pattern   Pattern @relation(fields: [patternId], references: [id])\n  patternId String  @unique\n\n  createdBy   User   @relation(fields: [createdById], references: [id])\n  createdById String\n}\n\nenum Status {\n  TODO\n  In_PROGESS\n  DONE\n}\n\nmodel Progress {\n  id       String  @id @default(cuid(2))\n  course   Int\n  started  Boolean @default(false)\n  finished Boolean @default(false)\n\n  createdAt DateTime @default(now())\n  updatedAt DateTime @updatedAt\n\n  project   Project @relation(fields: [projectId], references: [id])\n  projectId String  @unique\n}\n\ngenerator client {\n  provider = "prisma-client-js"\n  output   = "../generated/prisma"\n}\n\ndatasource db {\n  provider = "postgresql"\n  url      = env("DATABASE_URL")\n}\n\n// Necessary for Next auth\nmodel Account {\n  id                       String  @id @default(cuid())\n  userId                   String\n  type                     String\n  provider                 String\n  providerAccountId        String\n  refresh_token            String? // @db.Text\n  access_token             String? // @db.Text\n  expires_at               Int?\n  token_type               String?\n  scope                    String?\n  id_token                 String? // @db.Text\n  session_state            String?\n  user                     User    @relation(fields: [userId], references: [id], onDelete: Cascade)\n  refresh_token_expires_in Int?\n\n  @@unique([provider, providerAccountId])\n}\n\nmodel Session {\n  id           String   @id @default(cuid())\n  sessionToken String   @unique\n  userId       String\n  expires      DateTime\n  user         User     @relation(fields: [userId], references: [id], onDelete: Cascade)\n}\n\nmodel User {\n  id            String          @id @default(cuid())\n  name          String?\n  email         String?         @unique\n  emailVerified DateTime?\n  image         String?\n  accounts      Account[]\n  sessions      Session[]\n  patterns      ParentPattern[]\n  project       Project[]\n}\n\nmodel VerificationToken {\n  identifier String\n  token      String   @unique\n  expires    DateTime\n\n  @@unique([identifier, token])\n}\n',
   inlineSchemaHash:
-    "dd9a6edd7dcf3768e8fd246695361ce51823871115a517c30ff53e4d5bffa20b",
+    "dfb14919c511a881b437672d1e48c0a9324d0d9d4e5881ede843ceeacd8793af",
   copyEngine: true,
 };
 config.dirname = "/";
 
 config.runtimeDataModel = JSON.parse(
-  '{"models":{"Post":{"fields":[{"name":"id","kind":"scalar","type":"Int"},{"name":"name","kind":"scalar","type":"String"},{"name":"createdAt","kind":"scalar","type":"DateTime"},{"name":"updatedAt","kind":"scalar","type":"DateTime"},{"name":"createdBy","kind":"object","type":"User","relationName":"PostToUser"},{"name":"createdById","kind":"scalar","type":"String"}],"dbName":null},"Account":{"fields":[{"name":"id","kind":"scalar","type":"String"},{"name":"userId","kind":"scalar","type":"String"},{"name":"type","kind":"scalar","type":"String"},{"name":"provider","kind":"scalar","type":"String"},{"name":"providerAccountId","kind":"scalar","type":"String"},{"name":"refresh_token","kind":"scalar","type":"String"},{"name":"access_token","kind":"scalar","type":"String"},{"name":"expires_at","kind":"scalar","type":"Int"},{"name":"token_type","kind":"scalar","type":"String"},{"name":"scope","kind":"scalar","type":"String"},{"name":"id_token","kind":"scalar","type":"String"},{"name":"session_state","kind":"scalar","type":"String"},{"name":"user","kind":"object","type":"User","relationName":"AccountToUser"},{"name":"refresh_token_expires_in","kind":"scalar","type":"Int"}],"dbName":null},"Session":{"fields":[{"name":"id","kind":"scalar","type":"String"},{"name":"sessionToken","kind":"scalar","type":"String"},{"name":"userId","kind":"scalar","type":"String"},{"name":"expires","kind":"scalar","type":"DateTime"},{"name":"user","kind":"object","type":"User","relationName":"SessionToUser"}],"dbName":null},"User":{"fields":[{"name":"id","kind":"scalar","type":"String"},{"name":"name","kind":"scalar","type":"String"},{"name":"email","kind":"scalar","type":"String"},{"name":"emailVerified","kind":"scalar","type":"DateTime"},{"name":"image","kind":"scalar","type":"String"},{"name":"accounts","kind":"object","type":"Account","relationName":"AccountToUser"},{"name":"sessions","kind":"object","type":"Session","relationName":"SessionToUser"},{"name":"posts","kind":"object","type":"Post","relationName":"PostToUser"}],"dbName":null},"VerificationToken":{"fields":[{"name":"identifier","kind":"scalar","type":"String"},{"name":"token","kind":"scalar","type":"String"},{"name":"expires","kind":"scalar","type":"DateTime"}],"dbName":null}},"enums":{},"types":{}}',
+  '{"models":{"ParentPattern":{"fields":[{"name":"id","kind":"scalar","type":"String"},{"name":"title","kind":"scalar","type":"String"},{"name":"notes","kind":"scalar","type":"String"},{"name":"children","kind":"object","type":"Pattern","relationName":"ParentPatternToPattern"},{"name":"createdAt","kind":"scalar","type":"DateTime"},{"name":"updatedAt","kind":"scalar","type":"DateTime"},{"name":"createdBy","kind":"object","type":"User","relationName":"ParentPatternToUser"},{"name":"createdById","kind":"scalar","type":"String"}],"dbName":null},"Pattern":{"fields":[{"name":"id","kind":"scalar","type":"String"},{"name":"title","kind":"scalar","type":"String"},{"name":"notes","kind":"scalar","type":"String"},{"name":"courses","kind":"object","type":"Course","relationName":"CourseToPattern"},{"name":"project","kind":"object","type":"Project","relationName":"PatternToProject"},{"name":"createdAt","kind":"scalar","type":"DateTime"},{"name":"updatedAt","kind":"scalar","type":"DateTime"},{"name":"parent","kind":"object","type":"ParentPattern","relationName":"ParentPatternToPattern"},{"name":"parentId","kind":"scalar","type":"String"}],"dbName":null},"Course":{"fields":[{"name":"id","kind":"scalar","type":"String"},{"name":"instructions","kind":"scalar","type":"String"},{"name":"notes","kind":"scalar","type":"String"},{"name":"createdAt","kind":"scalar","type":"DateTime"},{"name":"updatedAt","kind":"scalar","type":"DateTime"},{"name":"pattern","kind":"object","type":"Pattern","relationName":"CourseToPattern"},{"name":"patternId","kind":"scalar","type":"String"}],"dbName":null},"Project":{"fields":[{"name":"id","kind":"scalar","type":"String"},{"name":"title","kind":"scalar","type":"String"},{"name":"notes","kind":"scalar","type":"String"},{"name":"status","kind":"enum","type":"Status"},{"name":"progress","kind":"object","type":"Progress","relationName":"ProgressToProject"},{"name":"createdAt","kind":"scalar","type":"DateTime"},{"name":"updatedAt","kind":"scalar","type":"DateTime"},{"name":"pattern","kind":"object","type":"Pattern","relationName":"PatternToProject"},{"name":"patternId","kind":"scalar","type":"String"},{"name":"createdBy","kind":"object","type":"User","relationName":"ProjectToUser"},{"name":"createdById","kind":"scalar","type":"String"}],"dbName":null},"Progress":{"fields":[{"name":"id","kind":"scalar","type":"String"},{"name":"course","kind":"scalar","type":"Int"},{"name":"started","kind":"scalar","type":"Boolean"},{"name":"finished","kind":"scalar","type":"Boolean"},{"name":"createdAt","kind":"scalar","type":"DateTime"},{"name":"updatedAt","kind":"scalar","type":"DateTime"},{"name":"project","kind":"object","type":"Project","relationName":"ProgressToProject"},{"name":"projectId","kind":"scalar","type":"String"}],"dbName":null},"Account":{"fields":[{"name":"id","kind":"scalar","type":"String"},{"name":"userId","kind":"scalar","type":"String"},{"name":"type","kind":"scalar","type":"String"},{"name":"provider","kind":"scalar","type":"String"},{"name":"providerAccountId","kind":"scalar","type":"String"},{"name":"refresh_token","kind":"scalar","type":"String"},{"name":"access_token","kind":"scalar","type":"String"},{"name":"expires_at","kind":"scalar","type":"Int"},{"name":"token_type","kind":"scalar","type":"String"},{"name":"scope","kind":"scalar","type":"String"},{"name":"id_token","kind":"scalar","type":"String"},{"name":"session_state","kind":"scalar","type":"String"},{"name":"user","kind":"object","type":"User","relationName":"AccountToUser"},{"name":"refresh_token_expires_in","kind":"scalar","type":"Int"}],"dbName":null},"Session":{"fields":[{"name":"id","kind":"scalar","type":"String"},{"name":"sessionToken","kind":"scalar","type":"String"},{"name":"userId","kind":"scalar","type":"String"},{"name":"expires","kind":"scalar","type":"DateTime"},{"name":"user","kind":"object","type":"User","relationName":"SessionToUser"}],"dbName":null},"User":{"fields":[{"name":"id","kind":"scalar","type":"String"},{"name":"name","kind":"scalar","type":"String"},{"name":"email","kind":"scalar","type":"String"},{"name":"emailVerified","kind":"scalar","type":"DateTime"},{"name":"image","kind":"scalar","type":"String"},{"name":"accounts","kind":"object","type":"Account","relationName":"AccountToUser"},{"name":"sessions","kind":"object","type":"Session","relationName":"SessionToUser"},{"name":"patterns","kind":"object","type":"ParentPattern","relationName":"ParentPatternToUser"},{"name":"project","kind":"object","type":"Project","relationName":"ProjectToUser"}],"dbName":null},"VerificationToken":{"fields":[{"name":"identifier","kind":"scalar","type":"String"},{"name":"token","kind":"scalar","type":"String"},{"name":"expires","kind":"scalar","type":"DateTime"}],"dbName":null}},"enums":{},"types":{}}',
 );
 defineDmmfProperty(exports.Prisma, config.runtimeDataModel);
 config.engineWasm = {

@@ -1,0 +1,38 @@
+model ParentPattern {
+  id       String    @id @default(cuid(2))
+  title    String
+  notes    String
+  children Pattern[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  createdBy   User   @relation(fields: [createdById], references: [id])
+  createdById String
+}
+
+model Pattern {
+  id      String   @id @default(cuid(2))
+  title   String
+  notes   String
+  courses Course[]
+  project Project?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  parent   ParentPattern @relation(fields: [parentId], references: [id])
+  parentId String
+}
+
+model Course {
+  id           String   @id @default(cuid(2))
+  instructions String[]
+  notes        String
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  pattern   Pattern @relation(fields: [patternId], references: [id])
+  patternId String
+}
